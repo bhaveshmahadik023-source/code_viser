@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "775206279908",
+    "project_id": "codevisualizer-bcce0",
+    "storage_bucket": "codevisualizer-bcce0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:775206279908:android:01fbc7e9f31c9942c7eaf1",
+        "android_client_info": {
+          "package_name": "com.example.codevisualizer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARuW_Xd6sr6XhB3so-7aISlAH-_x24jQ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
