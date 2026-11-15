@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,6 +14,7 @@ import '../../features/learning/screens/learning_path_screen.dart';
 import '../../features/playground/screens/python_playground_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/splash/splash_screen.dart';
+import '../../features/visualizer/screens/visualizer_screen.dart';
 import 'app_routes.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -113,10 +114,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PythonPlaygroundScreen(),
       ),
 
-      // Dry run animation screen.
+      // Code Visualizer.
+      //   /visualizer                  -> free mode (paste your own code)
+      //   /visualizer?lesson=python_for -> lesson mode (code is loaded)
+      GoRoute(
+        path: AppRoutes.visualizer,
+        builder: (context, state) {
+          final lessonId = state.uri.queryParameters['lesson'];
+          return VisualizerScreen(
+            // The key makes Flutter build a fresh screen for each lesson.
+            key: ValueKey(lessonId ?? 'free'),
+            lessonId: lessonId,
+          );
+        },
+      ),
+
+      // Ready-made algorithm animation (Bubble Sort ...).
       // :id is the algorithm id, for example bubble-sort.
-      // The old '/dry-run' route is removed because the screen now
-      // needs a tracer.
       GoRoute(
         path: '/dry-run/:id',
         builder: (context, state) {

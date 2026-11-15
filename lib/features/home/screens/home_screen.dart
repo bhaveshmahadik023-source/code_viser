@@ -80,10 +80,10 @@ class _HomeScreenState extends State<HomeScreen> {
     context.push(AppRoutes.learningPath);
   }
 
-  // NEW: Opens the Bubble Sort dry run animation screen.
-  // The id 'bubble-sort' must match the key in tracer_registry.dart.
-  void _openBubbleSortDryRun() {
-    context.push('/dry-run/bubble-sort');
+  // Opens the Code Visualizer screen.
+  // The user pastes any Python code and watches it run with animation.
+  void _openVisualizer() {
+    context.push('/visualizer');
   }
 
   @override
@@ -333,11 +333,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ),
                             ),
-                            // CHANGED: this button now opens the dry run
-                            // animation screen for Bubble Sort.
+                            // Opens the visualizer (Bubble Sort is the
+                            // first example inside it).
                             IconButton(
-                              onPressed: _openBubbleSortDryRun,
-                              tooltip: 'Watch Bubble Sort animation',
+                              onPressed: _openVisualizer,
+                              tooltip: 'Open the Code Visualizer',
                               icon: const Icon(
                                 Icons.play_circle_fill_rounded,
                                 size: 34,
@@ -551,9 +551,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Button in the hero section.
         FilledButton.icon(
-          onPressed: () {
-            context.push(AppRoutes.pythonPlayground);
-          },
+          onPressed: _openVisualizer,
           icon: const Icon(Icons.play_arrow_rounded),
           label: const Text('Start Visualizing'),
           style: FilledButton.styleFrom(

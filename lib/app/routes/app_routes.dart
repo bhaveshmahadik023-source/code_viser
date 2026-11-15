@@ -1,4 +1,3 @@
-
 class AppRoutes {
   // Main routes
   static const String pythonPlayground = '/python-playground';
@@ -13,4 +12,9 @@ class AppRoutes {
 
   // Learning routes
   static const String learningPath = '/learning-paths';
+
+  // Code Visualizer.
+  // Open a lesson with: '/visualizer?lesson=python_for'
+  // Open the free code editor with: '/visualizer'
+  static const String visualizer = '/visualizer';
 }

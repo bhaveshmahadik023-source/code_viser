@@ -1,6 +1,8 @@
-
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/routes/app_routes.dart';
+import '../../visualizer/engine/lesson_examples.dart';
 import '../data/learning_catalog.dart';
 import '../models/learning_models.dart';
 
@@ -17,6 +19,20 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
   LearningLevelType _selectedLevel = LearningLevelType.beginner;
 
   final LearningCourse _pythonCourse = pythonCourse;
+
+  // Opens the animated lesson. If the lesson has no animation yet,
+  // a small message is shown.
+  void _openLesson(BuildContext context, LearningLesson lesson) {
+    if (hasLessonExample(lesson.id)) {
+      context.push('${AppRoutes.visualizer}?lesson=${lesson.id}');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('The animation for this lesson is coming soon.'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +79,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
 
                 _buildSectionHeading(
                   'Python Learning Levels',
-                  'Your complete journey from beginner to advanced.',
+                  'Tap a lesson with a play icon to watch it run.',
                 ),
                 const SizedBox(height: 14),
 
@@ -165,9 +181,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w900,
                   height: 1.2,
-                  color: isDark
-                      ? Colors.white
-                      : const Color(0xFF172554),
+                  color: isDark ? Colors.white : const Color(0xFF172554),
                 ),
           ),
           const SizedBox(height: 12),
@@ -177,9 +191,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
             style: TextStyle(
               fontSize: 14,
               height: 1.6,
-              color: isDark
-                  ? Colors.white70
-                  : const Color(0xFF334155),
+              color: isDark ? Colors.white70 : const Color(0xFF334155),
             ),
           ),
           const SizedBox(height: 22),
@@ -194,13 +206,18 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
               Text(
                 'Your journey starts with Python',
                 style: TextStyle(
-                  color: isDark
-                      ? Colors.white
-                      : const Color(0xFF172554),
+                  color: isDark ? Colors.white : const Color(0xFF172554),
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 18),
+          // NEW: open the visualizer with your own code.
+          FilledButton.icon(
+            onPressed: () => context.push(AppRoutes.visualizer),
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: const Text('Open Code Visualizer'),
           ),
         ],
       ),
@@ -231,7 +248,6 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
   }
 
   Widget _buildLearningModeSelector(BuildContext context) {
-   
     return Row(
       children: [
         Expanded(
@@ -555,11 +571,32 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
                 '${_pythonCourse.levels.length}',
                 'Levels',
               ),
+              const SizedBox(width: 25),
+              // NEW: how many lessons already have an animation.
+              _buildStat(
+                context,
+                Icons.play_circle_outline,
+                '${_animatedLessonCount()}',
+                'Animated',
+              ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  // Counts the lessons of the course that have an animation.
+  int _animatedLessonCount() {
+    var count = 0;
+    for (final level in _pythonCourse.levels) {
+      for (final module in level.modules) {
+        for (final lesson in module.lessons) {
+          if (hasLessonExample(lesson.id)) count++;
+        }
+      }
+    }
+    return count;
   }
 
   Widget _buildStat(
@@ -681,6 +718,10 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
   ) {
     final theme = Theme.of(context);
 
+    // How many lessons of this module have an animation.
+    final animated =
+        module.lessons.where((l) => hasLessonExample(l.id)).length;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 9),
       decoration: BoxDecoration(
@@ -703,7 +744,7 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
           ),
         ),
         subtitle: Text(
-          '${module.totalLessons} Lessons',
+          '${module.totalLessons} Lessons • $animated animated',
         ),
         children: [
           Align(
@@ -720,50 +761,61 @@ class _LearningPathScreenState extends State<LearningPathScreen> {
             (entry) {
               final index = entry.key;
               final lesson = entry.value;
+              final hasAnimation = hasLessonExample(lesson.id);
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 7),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 13,
-                      backgroundColor: theme.colorScheme.primary
-                          .withValues(alpha: 0.12),
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+              // The whole row is tappable.
+              return InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => _openLesson(context, lesson),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 7),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 13,
+                        backgroundColor: theme.colorScheme.primary
+                            .withValues(alpha: 0.12),
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            lesson.title,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              lesson.title,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          Text(
-                            '${lesson.durationMinutes} min',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                            Text(
+                              '${lesson.durationMinutes} min',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Icon(
-                      Icons.lock_outline,
-                      size: 16,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ],
+                      // Play icon = animation is ready. Lock = coming soon.
+                      Icon(
+                        hasAnimation
+                            ? Icons.play_circle_fill_rounded
+                            : Icons.lock_outline,
+                        size: hasAnimation ? 24 : 16,
+                        color: hasAnimation
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
