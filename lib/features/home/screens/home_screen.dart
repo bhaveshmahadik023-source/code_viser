@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,9 +12,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _searchController =
-      TextEditingController();
+  // Controller for the search box.
+  final TextEditingController _searchController = TextEditingController();
 
+  // List of categories shown on the home screen.
   final List<Map<String, dynamic>> _categories = [
     {
       'name': 'Arrays',
@@ -55,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
+  // Returns only the categories that match the search text.
   List<Map<String, dynamic>> get _filteredCategories {
     final query = _searchController.text.toLowerCase().trim();
 
@@ -63,14 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return _categories.where((category) {
-      return category['name']
-              .toString()
-              .toLowerCase()
-              .contains(query) ||
-          category['description']
-              .toString()
-              .toLowerCase()
-              .contains(query);
+      return category['name'].toString().toLowerCase().contains(query) ||
+          category['description'].toString().toLowerCase().contains(query);
     }).toList();
   }
 
@@ -83,6 +78,12 @@ class _HomeScreenState extends State<HomeScreen> {
   // Navigate to Learning Paths.
   void _openLearningPaths() {
     context.push(AppRoutes.learningPath);
+  }
+
+  // NEW: Opens the Bubble Sort dry run animation screen.
+  // The id 'bubble-sort' must match the key in tracer_registry.dart.
+  void _openBubbleSortDryRun() {
+    context.push('/dry-run/bubble-sort');
   }
 
   @override
@@ -114,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            // Wide layout for big screens (web or tablet).
             final isWide = constraints.maxWidth >= 800;
 
             return SingleChildScrollView(
@@ -123,9 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 1100,
-                  ),
+                  constraints: const BoxConstraints(maxWidth: 1100),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -172,9 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: isWide
                             ? Row(
                                 children: [
-                                  Expanded(
-                                    child: _buildHeroContent(),
-                                  ),
+                                  Expanded(child: _buildHeroContent()),
                                   const SizedBox(width: 20),
                                   const Icon(
                                     Icons.code_rounded,
@@ -313,8 +311,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Text(
                                     'Bubble Sort',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -335,9 +333,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ),
                             ),
+                            // CHANGED: this button now opens the dry run
+                            // animation screen for Bubble Sort.
                             IconButton(
-                              onPressed: _openLearningPaths,
-                              tooltip: 'Explore Learning Paths',
+                              onPressed: _openBubbleSortDryRun,
+                              tooltip: 'Watch Bubble Sort animation',
                               icon: const Icon(
                                 Icons.play_circle_fill_rounded,
                                 size: 34,
@@ -418,9 +418,7 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant,
-            ),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -482,18 +480,12 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 28,
-          ),
+          Icon(icon, color: color, size: 28),
 
           const SizedBox(height: 12),
 
@@ -556,17 +548,19 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         const SizedBox(height: 20),
-FilledButton.icon(
-  onPressed: () {
-    context.push(AppRoutes.pythonPlayground);
-  },
-  icon: const Icon(Icons.play_arrow_rounded),
-  label: const Text('Start Visualizing'),
-  style: FilledButton.styleFrom(
-    backgroundColor: const Color(0xFF67E8F9),
-    foregroundColor: const Color(0xFF111827),
-  ),
-),
+
+        // Button in the hero section.
+        FilledButton.icon(
+          onPressed: () {
+            context.push(AppRoutes.pythonPlayground);
+          },
+          icon: const Icon(Icons.play_arrow_rounded),
+          label: const Text('Start Visualizing'),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF67E8F9),
+            foregroundColor: const Color(0xFF111827),
+          ),
+        ),
       ],
     );
   }
@@ -587,9 +581,7 @@ FilledButton.icon(
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant,
-          ),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
