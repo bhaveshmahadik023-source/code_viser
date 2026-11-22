@@ -11,6 +11,8 @@ import '../providers/trace_playback_provider.dart';
 import '../widgets/array_strip.dart';
 import '../widgets/call_stack_view.dart';
 import '../widgets/code_view.dart';
+import '../widgets/decision_card.dart';
+import '../widgets/dict_view.dart';
 import '../widgets/matrix_view.dart';
 import '../widgets/output_console.dart';
 import '../widgets/player_controls.dart';
@@ -36,6 +38,9 @@ class VisualizerScreen extends ConsumerStatefulWidget {
 
 class _VisualizerScreenState extends ConsumerState<VisualizerScreen> {
   late final TextEditingController _editor;
+
+  // Values for input(), one per line.
+  final TextEditingController _inputBox = TextEditingController();
 
   // Result of the last run. null = we are in the editor.
   TraceResult? _result;
@@ -71,6 +76,7 @@ class _VisualizerScreenState extends ConsumerState<VisualizerScreen> {
   @override
   void dispose() {
     _editor.dispose();
+    _inputBox.dispose();
     super.dispose();
   }
 
@@ -86,7 +92,7 @@ class _VisualizerScreenState extends ConsumerState<VisualizerScreen> {
       return;
     }
 
-    final result = PyTracer(code).run();
+    final result = PyTracer(code, inputs: _inputLines()).run();
 
     // Nothing to show: the code has an error before the first step.
     if (result.steps.isEmpty) {
@@ -104,6 +110,13 @@ class _VisualizerScreenState extends ConsumerState<VisualizerScreen> {
       _shownCode = code;
       _editorError = null;
     });
+  }
+
+  // The lines typed in the Input box (used by input()).
+  List<String> _inputLines() {
+    final text = _inputBox.text;
+    if (text.trim().isEmpty) return const <String>[];
+    return text.split('\n');
   }
 
   // Puts an example in the editor. If [run] is true, it starts at once.
@@ -324,6 +337,29 @@ class _VisualizerScreenState extends ConsumerState<VisualizerScreen> {
                 ),
               ),
 
+              // Values for input(). One value per line.
+              Card(
+                child: ExpansionTile(
+                  leading: const Icon(Icons.keyboard_rounded),
+                  title: const Text('Input for input() (optional)'),
+                  subtitle: const Text('Type one value per line'),
+                  childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  children: [
+                    TextField(
+                      controller: _inputBox,
+                      minLines: 2,
+                      maxLines: 6,
+                      keyboardType: TextInputType.multiline,
+                      style: const TextStyle(fontFamily: 'monospace'),
+                      decoration: const InputDecoration(
+                        hintText: 'For example:\nAsha\n20',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               // Error message (syntax error, unsupported feature ...).
               if (error != null) ...[
                 const SizedBox(height: 12),
@@ -365,6 +401,8 @@ class _VisualizerScreenState extends ConsumerState<VisualizerScreen> {
     // Lists and matrices are drawn as pictures, other variables as chips.
     final arrays = step.vars.values.where((v) => v.type == VarType.list);
     final matrices = step.vars.values.where((v) => v.type == VarType.matrix);
+    final dicts = step.vars.values.where((v) => v.type == VarType.dict);
+    final objects = step.vars.values.where((v) => v.type == VarType.object);
 
     final visuals = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -381,6 +419,18 @@ class _VisualizerScreenState extends ConsumerState<VisualizerScreen> {
         StepCard(step: step, total: playback.steps.length),
         const SizedBox(height: 12),
 
+        // How an if / while line decided (True or False and the next way).
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: step.decision == null
+              ? const SizedBox.shrink(key: ValueKey('no-decision'))
+              : Padding(
+                  key: ValueKey('decision-${step.number}'),
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: DecisionCard(decision: step.decision!),
+                ),
+        ),
+
         for (final a in arrays) ...[
           ArrayStrip(
             snapshot: a,
@@ -392,6 +442,20 @@ class _VisualizerScreenState extends ConsumerState<VisualizerScreen> {
 
         for (final m in matrices) ...[
           MatrixView(snapshot: m),
+          const SizedBox(height: 12),
+        ],
+
+        for (final d in dicts) ...[
+          DictView(
+            snapshot: d,
+            marks: step.dictMarks[d.name] ?? const <String, MarkKind>{},
+            previous: previous?.vars[d.name],
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        for (final o in objects) ...[
+          DictView(snapshot: o, previous: previous?.vars[o.name]),
           const SizedBox(height: 12),
         ],
 
@@ -429,7 +493,12 @@ class _VisualizerScreenState extends ConsumerState<VisualizerScreen> {
             ),
           ],
         ),
-        CodeView(code: _shownCode, activeLine: step.line),
+        CodeView(
+          code: _shownCode,
+          activeLine: step.line,
+          skippedLines: step.skippedLines,
+          decisionResult: step.condition,
+        ),
       ],
     );
 
@@ -508,17 +577,27 @@ class _SupportedInfo extends StatelessWidget {
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Supported: numbers, text, True/False, lists, 2D lists, '
-            'arithmetic, comparisons, and / or / not, if / elif / else, '
-            'for, while, break, continue, def, return, recursion, '
-            'print, len, range, int, float, str, abs, min, max, sum, '
-            'list, enumerate, round, and list methods like append, pop, '
-            'insert, remove, reverse.',
+            'Supported: numbers, text, f-strings, True/False, lists, tuples, '
+            'sets, dictionaries, 2D lists, slicing, list / set / dict '
+            'comprehensions, arithmetic and bit operators, if / elif / else, '
+            'for / while (with else), break, continue, functions with default '
+            'values, lambda, recursion, classes with methods, inheritance and '
+            'super(), try / except / finally, raise, assert, del, global, '
+            'import math, and input().',
           ),
           SizedBox(height: 8),
           Text(
-            'Not supported yet: dictionaries, sets, classes, imports, '
-            'slicing (a[1:3]), list comprehensions, input(), Java code.',
+            'Built-in functions: print (sep, end), len, range, int, float, '
+            'str, bool, abs, min, max, sum, round, pow, divmod, sorted, '
+            'reversed, enumerate, zip, map, filter, any, all, list, tuple, '
+            'set, dict, chr, ord, type, isinstance, bin, hex, oct, format.',
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Not supported yet: other modules (random, os ...), file '
+            'handling and with blocks, multiple inheritance, decorators other '
+            'than staticmethod / classmethod / property, *args, **kwargs, '
+            'generators (yield), async, and Java code.',
           ),
           SizedBox(height: 8),
           Text(

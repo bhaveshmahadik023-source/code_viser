@@ -4,16 +4,22 @@ import 'package:flutter/material.dart';
 
 // Finds comments, strings, keywords, built-in names and numbers.
 final RegExp _tokenRe = RegExp(
-  r'''(#.*$)|("[^"]*"|'[^']*')|\b(def|if|elif|else|for|while|in|not|and|or|return|break|continue|pass|is|True|False|None)\b|\b(print|len|range|int|float|str|abs|min|max|sum|list|enumerate|round)\b|\b(\d+\.?\d*)\b''',
+  r'''(#.*$)|("[^"]*"|'[^']*')|\b(def|class|if|elif|else|for|while|in|not|and|or|return|break|continue|pass|is|True|False|None|try|except|finally|raise|import|from|as|lambda|global|assert|del)\b|\b(print|len|range|int|float|str|bool|abs|min|max|sum|list|tuple|set|dict|enumerate|zip|sorted|round|input|isinstance|type)\b|\b(\d+\.?\d*)\b''',
 );
 
 /// Read-only code viewer with line numbers, simple syntax colors and
 /// a highlighted active line. It scrolls by itself to the active line.
+///
+/// Lines in [skippedLines] belong to a branch that will not run, so they
+/// are drawn faded. When [decisionResult] is set, the active line is green
+/// (True) or red (False).
 class CodeView extends StatefulWidget {
   const CodeView({
     super.key,
     required this.code,
     required this.activeLine,
+    this.skippedLines = const <int>{},
+    this.decisionResult,
     this.maxHeight = 460,
   });
 
@@ -21,6 +27,13 @@ class CodeView extends StatefulWidget {
 
   /// Line to highlight (1-based, 0 = none).
   final int activeLine;
+
+  /// Lines of branches that will not run.
+  final Set<int> skippedLines;
+
+  /// Result of the if / while condition on the active line (null = none).
+  final bool? decisionResult;
+
   final double maxHeight;
 
   @override
@@ -113,6 +126,12 @@ class _CodeViewState extends State<CodeView> {
     final height =
         math.min(_lines.length * _lineHeight + 16, widget.maxHeight);
 
+    // Color of the active line: green / red for a decision, else primary.
+    final result = widget.decisionResult;
+    final Color tone = result == null
+        ? scheme.primary
+        : (result ? Colors.green : Colors.redAccent);
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
@@ -127,39 +146,44 @@ class _CodeViewState extends State<CodeView> {
                 SizedBox(
                   height: _lineHeight,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 250),
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     alignment: Alignment.centerLeft,
                     decoration: BoxDecoration(
                       color: i + 1 == widget.activeLine
-                          ? scheme.primary.withValues(alpha: 0.22)
+                          ? tone.withValues(alpha: 0.22)
                           : Colors.transparent,
                       border: Border(
                         left: BorderSide(
                           width: 3,
                           color: i + 1 == widget.activeLine
-                              ? scheme.primary
+                              ? tone
                               : Colors.transparent,
                         ),
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 30,
-                          child: Text(
-                            '${i + 1}',
-                            style: base.copyWith(color: scheme.outline),
+                    // Lines of a branch that will not run are faded.
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 250),
+                      opacity: widget.skippedLines.contains(i + 1) ? 0.3 : 1,
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 30,
+                            child: Text(
+                              '${i + 1}',
+                              style: base.copyWith(color: scheme.outline),
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: Text.rich(
-                            _highlight(_lines[i], scheme, base),
-                            softWrap: false,
-                            overflow: TextOverflow.fade,
+                          Expanded(
+                            child: Text.rich(
+                              _highlight(_lines[i], scheme, base),
+                              softWrap: false,
+                              overflow: TextOverflow.fade,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

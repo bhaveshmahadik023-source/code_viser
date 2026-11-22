@@ -79,8 +79,8 @@ print(bs([1, 3, 5, 7, 9], 7))
     expect(r.steps, isEmpty);
   });
 
-  test('unsupported feature gives a clear message', () {
-    final r = PyTracer('import math\n').run();
+  test('unsupported module gives a clear message', () {
+    final r = PyTracer('import random\n').run();
     expect(r.error!.message, contains('not supported'));
   });
 }

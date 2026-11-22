@@ -63,4 +63,54 @@ while num > 0:
 
 print(total)
 '''),
+  CodeExample('Character frequency', '''text = "banana"
+count = {}
+for ch in text:
+    if ch in count:
+        count[ch] += 1
+    else:
+        count[ch] = 1
+print(count)
+'''),
+  CodeExample('if / elif / else', '''age = 20
+if age >= 18:
+    print(f"Age {age}: adult")
+elif age >= 13:
+    print(f"Age {age}: teenager")
+else:
+    print(f"Age {age}: child")
+print("Done")
+'''),
+  CodeExample('Class and objects', '''class Dog:
+    def __init__(self, name):
+        self.name = name
+        self.tricks = 0
+
+    def learn(self):
+        self.tricks += 1
+
+    def __str__(self):
+        return f"{self.name} knows {self.tricks} tricks"
+
+d = Dog("Rex")
+d.learn()
+d.learn()
+print(d)
+'''),
+  CodeExample('try / except', '''def divide(a, b):
+    try:
+        return a / b
+    except ZeroDivisionError:
+        print("Cannot divide by zero")
+        return 0
+    finally:
+        print("done")
+
+print(divide(10, 2))
+print(divide(5, 0))
+'''),
+  CodeExample('List comprehension', '''nums = [1, 2, 3, 4, 5, 6]
+squares = [n * n for n in nums if n % 2 == 0]
+print(squares)
+'''),
 ];
